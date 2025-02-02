@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reverse-proxy
+spec:
+  selector:
+    matchLabels:
+      app: reverse-proxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: reverse-proxy
+    spec:
+      initContainers:
+      - name: init-reverse-proxy
+        image: busybox:1.28
+        command: ['sh', '-c']
+        args: ["
+          set -x;
+          echo \"Initializing nginx..\";
+          mkdir -p /etc/nginx/sites-available \
+                   /etc/nginx/sites-enabled;
+          cp /tmp/nginx/*.conf /etc/nginx/;
+          cp /tmp/nginx/reverse-proxy.conf /etc/nginx/sites-available/;
+          ln -s /etc/nginx/sites-available/reverse-proxy.conf /etc/nginx/sites-enabled/reverse-proxy.conf;
+          ls -ltr /etc/nginx/*;"
+        ]
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /tmp/nginx
+        - name: conf
+          mountPath: /etc/nginx
+        - name: ssl-cert
+          mountPath: /etc/nginx/ssl
+          readOnly: true
+      containers:
+      - name: reverse-proxy
+        image: 127.0.0.1:5000/nginx:1.0
+        ports:
+          - name: http
+            containerPort: 80
+          - name: https
+            containerPort: 443
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 443
+            scheme: HTTPS
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /tmp/nginx
+        - name: conf
+          mountPath: /etc/nginx
+        - name: ssl-cert
+          mountPath: /etc/nginx/ssl
+          readOnly: true
+      volumes:
+      - name: nginx-conf
+        configMap: 
+          name: nginx-conf
+          defaultMode: 0664
+      - name: conf
+        emptyDir: {}
+      - name: ssl-cert
+        secret:
+          secretName: ssl-cert

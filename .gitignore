@@ -1,0 +1,13 @@
+webserver/notes.txt
+webserver/html/*
+k3s_data/
+bin/
+lib/
+lib64
+pyvenv.cfg
+__pycache__/
+*.pyc
+*.log
+webserver/cert/
+notes.txt
+webserver/src/events.sqlite

@@ -1,0 +1,413 @@
+/* Base Container */
+.container {
+    max-width: 1200px;
+    width: 95%;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Output Container */
+#output {
+    width: 100%;
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin: 20px 0;
+    padding: 1rem;
+    background: #333;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Table Base */
+#output-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    background-color: #333;
+    font-size: 14px;
+}
+
+/* Table Header */
+#output-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #444;
+}
+
+#output-table th {
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #fff;
+    border-bottom: 2px solid #555;
+    white-space: nowrap;
+}
+
+/* Column Widths */
+#output-table th:nth-child(1),
+#output-table td:nth-child(1) {
+    width: 25%;
+}
+
+#output-table th:nth-child(2),
+#output-table td:nth-child(2) {
+    width: 35%;
+}
+
+#output-table th:nth-child(3),
+#output-table td:nth-child(3) {
+    width: 20%;
+}
+
+#output-table th:nth-child(4),
+#output-table td:nth-child(4) {
+    width: 20%;
+}
+
+/* Table Body */
+#output-table tbody tr {
+    border-bottom: 1px solid #555;
+    transition: background-color 0.2s ease;
+}
+
+#output-table tbody tr:hover {
+    background-color: #555;
+}
+
+#output-table td {
+    padding: 8px 10px;
+    color: #fff;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Venue Header */
+.venue-header td {
+    background-color: #444;
+    font-weight: bold;
+    font-size: 16px;
+    border-top: 2px solid #555;
+    padding: 10px;
+}
+
+/* Event Row */
+.event-row td:first-child {
+    padding-left: 15px;
+}
+
+/* DateTime Cell */
+.datetime-cell {
+    font-family: monospace;
+    white-space: nowrap;
+    color: #ccc;
+    font-size: 0.9em;
+}
+
+/* Links */
+#output-table a {
+    display: inline-block;
+    padding: 4px 8px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+#output-table a:hover {
+    background-color: #0056b3;
+}
+
+/* Custom Scrollbar */
+#output::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+#output::-webkit-scrollbar-track {
+    background: #444;
+    border-radius: 4px;
+}
+
+#output::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#output::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Empty State */
+#output-table tbody:empty::after {
+    content: 'No events found';
+    display: block;
+    text-align: center;
+    padding: 20px;
+    color: #ccc;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        width: 98%;
+        padding: 15px;
+    }
+
+    #output {
+        padding: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    #output {
+        padding: 0.5rem;
+    }
+
+    #output-table {
+        font-size: 12px;
+    }
+
+    #output-table th:nth-child(1),
+    #output-table td:nth-child(1) {
+        width: 25%;
+    }
+
+    #output-table th:nth-child(2),
+    #output-table td:nth-child(2) {
+        width: 50%;
+    }
+
+    #output-table th:nth-child(3),
+    #output-table td:nth-child(3) {
+        width: 25%;
+    }
+
+    #output-table th,
+    #output-table td {
+        padding: 6px 8px;
+    }
+
+    .datetime-cell {
+        font-size: 0.8em;
+    }
+}
+
+.spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+}
+
+/* Add the keyframes for the spinner animation */
+@keyframes spinner-border {
+    0% {
+        transform: rotate(0deg); /* Start at 0 degrees */
+    }
+    100% {
+        transform: rotate(360deg); /* Rotate to 360 degrees */
+    }
+}
+
+.d-none {
+    display: none !important;
+}
+
+/* Status Message */
+#status {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #444;
+    color: #f8f9fa;
+    border-radius: 4px;
+    position: relative; /* Position relative for absolute positioning of dots */
+}
+
+/* Dots Animation */
+.dot {
+    display: inline-block;
+    animation: dot-blink 1s steps(5, end) infinite; /* Animation for dots */
+}
+
+/* Keyframes for dots animation */
+@keyframes dot-blink {
+    0%, 20% {
+        content: '';
+    }
+    20%, 40% {
+        content: '.';
+    }
+    40%, 60% {
+        content: '..';
+    }
+    60%, 80% {
+        content: '...';
+    }
+    80%, 100% {
+        content: '';
+    }
+}
+
+#error {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border-radius: 4px;
+    display: none;
+}
+
+.venue-header {
+    background-color: #444;
+    font-weight: bold;
+}
+
+.event-row:hover {
+    background-color: #555;
+}
+
+h2 {
+    color: #f8f9fa;
+}
+
+body {
+    background-color: #2b2a2a;
+}
+
+/* Output Container */
+#output {
+    background: #333;
+}
+
+#output-table {
+    background-color: #333;
+}
+
+/* Table Header */
+#output-table th {
+    color: #fff;
+    background-color: #444;
+}
+
+#output-table tr {
+    color: #fff;
+    background-color: #333;
+}
+
+#output-table tbody {
+    color: #fff;
+    background-color: #333;
+}
+
+/* Links */
+#output-table a {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Custom Scrollbar */
+#output::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+/* Error Message */
+#error {
+    background-color: #f8d7da;
+}
+
+/* Button */
+.action-button {
+    background-color: #d3d3d3;
+    color: #333;
+}
+
+/* Tooltip Styles */
+.tooltip {
+    display: none; /* Hidden by default */
+    position: absolute;
+    background-color: #444;
+    color: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    z-index: 1000;
+    max-width: 200px; /* Limit width */
+    word-wrap: break-word; /* Allow text to wrap */
+}
+
+#btn-show-hosts {
+    margin-left: 10px; /* Space between buttons */
+}
+
+#new-host-input {
+    margin-top: 10px;
+    padding: 5px;
+    width: calc(100% - 10px); /* Full width minus padding */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.button-container {
+    display: flex; /* Use flexbox to align buttons in a row */
+    justify-content: space-between; /* Space between buttons */
+    margin-bottom: 20px; /* Space below the button container */
+}
+
+.action-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    margin: 20px 0;
+    min-width: 150px;
+}
+
+.action-button:hover {
+    background-color: #b3b3b3;
+    color: #333;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-button:last-child {
+    margin-right: 0; /* Remove margin from the last button */
+}
+
+.action-button:active {
+    background-color: #b3b3b3;
+    color: #333;
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.action-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+
+
+

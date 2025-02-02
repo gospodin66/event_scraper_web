@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver
+  labels:
+    app: webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - name: webserver
+        image: localhost:5000/webserver:1.0
+        imagePullPolicy: Always
+        command: ["gunicorn"]
+        args: [
+          "webserver:app",
+          "--bind", "0.0.0.0:5000",
+          "--workers", "2",
+          "--timeout", "120",
+          "--keep-alive", "5",
+          "--log-level", "info",
+          "--access-logfile", "-",
+          "--error-logfile", "-", 
+          "--capture-output"
+        ]
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"

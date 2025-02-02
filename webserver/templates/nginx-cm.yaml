@@ -1,0 +1,222 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: default
+  name: nginx-conf
+  labels:
+    app: nginx-conf
+data:
+  reverse-proxy.conf: |
+    upstream webserver {
+        server webserver.default.svc.cluster.local:80;
+    }
+    server {
+        server_name _;
+        listen 80;
+        return 301 https://$host$request_uri;
+    }
+    server {
+        listen 443 ssl default_server;
+        server_name _;
+
+        resolver kube-dns.kube-system.svc.cluster.local valid=300s;
+        resolver_timeout 5s;
+
+        ssl_certificate /etc/nginx/ssl/reverse-proxy.default.svc.cluster.local.crt;
+        ssl_certificate_key /etc/nginx/ssl/reverse-proxy.default.svc.cluster.local.key;
+        ssl_dhparam /etc/nginx/ssl/dhparam.pem;
+
+        include /etc/nginx/ssl.conf;
+        include /etc/nginx/proxy.conf;
+        
+        access_log /var/log/nginx/reverse-proxy.default.svc.cluster.local-access.log;
+        error_log /var/log/nginx/reverse-proxy.default.svc.cluster.local-error.log;
+
+        sendfile on;
+        keepalive_timeout 60;
+
+        location / {
+            proxy_pass http://webserver/;
+            allow  10.42.0.0/16;
+            allow  10.43.0.0/16;
+            deny all;
+        }
+        
+        location /healthcheck {
+            access_log off;
+            add_header Content-Type text/plain;
+            return 200 'OK';
+        }
+
+        location = /favicon.ico {
+            return 404;
+            access_log off;
+            log_not_found off;
+        }
+
+        location = /robots.txt {
+            return 404;
+            access_log off;
+            log_not_found off;
+        }
+
+        location /nginx_status {
+            stub_status;
+            access_log off;
+            allow 10.42.0.0/16;
+            allow 10.43.0.0/16;
+            deny all;
+        }
+
+        location ~ /\. {
+            deny all;
+        }
+        
+    }
+  webserver.conf: |
+    server {
+        listen 443 ssl default_server;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        resolver kube-dns.kube-system.svc.cluster.local valid=300s;
+        resolver_timeout 5s;
+
+        ssl_certificate /etc/nginx/ssl/webserver.default.svc.cluster.local.crt;
+        ssl_certificate_key /etc/nginx/ssl/webserver.default.svc.cluster.local.key;
+        ssl_dhparam /etc/nginx/ssl/dhparam.pem;
+        include /etc/nginx/ssl.conf;
+        
+        access_log /var/log/nginx/webserver.default.svc.cluster.local-access.log;
+        error_log /var/log/nginx/webserver.default.svc.cluster.local-error.log;
+
+        sendfile on;
+        keepalive_timeout 60;
+
+        location / {
+            try_files $uri $uri/ =404;
+            
+            include /etc/nginx/mime-types.conf;
+            default_type application/octet-stream;
+        }
+
+        location /healthcheck {
+            access_log off;
+            add_header Content-Type text/plain;
+            return 200 'OK';
+        }
+
+        location = /favicon.ico {
+            return 404;
+            access_log off;
+            log_not_found off;
+        }
+    }
+  nginx.conf: |
+    user nginx nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log;
+    pid /var/run/nginx.pid;
+    worker_rlimit_nofile 8192;
+
+    events {
+        worker_connections 4096;    # Increase from 1024
+        use epoll;                  # Use efficient event processing
+        multi_accept on;            # Accept as many connections as possible
+    }
+
+    http {
+      server_tokens off;
+
+      log_format upstreamlog '[$time_local] $remote_addr - $remote_user - $server_name $host to: $upstream_addr: $request $status upstream_response_time $upstream_response_time msec $msec request_time $request_time';
+
+      index index.html index.htm index.php;
+      default_type text/html;
+
+      access_log /var/log/nginx/access.log;
+      sendfile on;
+      tcp_nopush on;
+      server_names_hash_bucket_size 128;
+
+      client_header_timeout 60s;
+      client_body_timeout 60s;
+      send_timeout 60s;
+
+      client_body_buffer_size 128k;
+      client_max_body_size 2M;
+      client_header_buffer_size 16k;
+      large_client_header_buffers 8 32k;
+
+      include /etc/nginx/conf.d/*.conf;
+      include /etc/nginx/sites-enabled/*;
+    }
+  proxy.conf: |
+    proxy_redirect off;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_connect_timeout 60;
+    proxy_send_timeout 60;
+    proxy_read_timeout 60;
+    proxy_buffers 32 4k;
+    client_max_body_size 10m;
+    client_body_buffer_size 128k;
+  ssl.conf: |
+    ssl_protocols TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+    ssl_session_timeout 10m;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+    ssl_stapling off;
+    ssl_stapling_verify off;
+  mime-types.conf: |
+    types {
+      text/html                             html htm shtml;
+      text/css                              css;
+      text/xml                              xml rss;
+      image/gif                             gif;
+      image/jpeg                            jpeg jpg;
+      application/x-javascript              js;
+      text/plain                            txt;
+      text/x-component                      htc;
+      text/mathml                           mml;
+      image/png                             png;
+      image/x-icon                          ico;
+      image/x-jng                           jng;
+      image/vnd.wap.wbmp                    wbmp;
+      application/java-archive              jar war ear;
+      application/mac-binhex40              hqx;
+      application/pdf                       pdf;
+      application/x-cocoa                   cco;
+      application/x-java-archive-diff       jardiff;
+      application/x-java-jnlp-file          jnlp;
+      application/x-makeself                run;
+      application/x-perl                    pl pm;
+      application/x-pilot                   prc pdb;
+      application/x-rar-compressed          rar;
+      application/x-redhat-package-manager  rpm;
+      application/x-sea                     sea;
+      application/x-shockwave-flash         swf;
+      application/x-stuffit                 sit;
+      application/x-tcl                     tcl tk;
+      application/x-x509-ca-cert            der pem crt;
+      application/x-xpinstall               xpi;
+      application/zip                       zip;
+      application/octet-stream              deb;
+      application/octet-stream              bin exe dll;
+      application/octet-stream              dmg;
+      application/octet-stream              eot;
+      application/octet-stream              iso img;
+      application/octet-stream              msi msp msm;
+      audio/mpeg                            mp3;
+      audio/x-realaudio                     ra;
+      video/mpeg                            mpeg mpg;
+      video/quicktime                       mov;
+      video/x-flv                           flv;
+      video/x-msvideo                       avi;
+      video/x-ms-wmv                        wmv;
+      video/x-ms-asf                        asx asf;
+      video/x-mng                           mng;
+    }

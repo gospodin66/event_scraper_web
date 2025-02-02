@@ -1,0 +1,8 @@
+[submodule "event_scraper"]
+	path = event_scraper
+	url = https://github.com/gospodin66/event_scraper.git
+	branch = master
+[submodule "event_scraper_celery"]
+	path = event_scraper_celery
+	url = https://github.com/gospodin66/event_scraper_celery.git
+	branch = master

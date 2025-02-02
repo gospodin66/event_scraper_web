@@ -1,0 +1,23 @@
+name: Nginx Reverse Proxy / webserver CI/CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiments
+
+jobs:
+  # Build Job
+  build:
+    runs-on: 127.0.0.1:5000/nginx:1.0
+    steps:
+      - name: Build Docker Image
+        run: |
+          docker build -t 127.0.0.1:5000/nginx:1.0 .
+      - name: Push Docker Image
+        run: |
+          docker push 127.0.0.1:5000/nginx:1.0
+      - name: healthcheck
+        run: |
+          curl -k https://reverse-proxy.default.svc.cluster.local/healthcheck
+          curl -k https://webserver.default.svc.cluster.local/healthcheck
