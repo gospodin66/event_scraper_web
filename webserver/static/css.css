@@ -111,7 +111,7 @@
 #output-table a {
     display: inline-block;
     padding: 4px 8px;
-    background-color: #007bff;
+    background-color: #666;
     color: white;
     text-decoration: none;
     border-radius: 4px;
@@ -120,7 +120,7 @@
 }
 
 #output-table a:hover {
-    background-color: #0056b3;
+    background-color: #333;
 }
 
 /* Custom Scrollbar */
@@ -315,7 +315,7 @@ body {
 
 /* Links */
 #output-table a {
-    background-color: #007bff;
+    background-color: #666;
     color: white;
 }
 

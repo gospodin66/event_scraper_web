@@ -10,7 +10,7 @@ project_root = Path(__file__).parent.parent.parent
 celery_path = project_root / 'event_scraper_celery'
 sys.path.extend([str(project_root), str(celery_path)])
 from event_scraper_celery.tasks import run_scraper_task
-from db import Database, Event, Host, parse_and_save_result
+from db import Database, Event
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,8 @@ app = Flask(
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.verify_mode = ssl.CERT_OPTIONAL
-
+context.load_cert_chain(certfile=f"{cert_dir}/server.crt", keyfile=f"{cert_dir}/server.key")
+context.load_verify_locations(cafile="/etc/ssl/certs/ca-certificates.crt")
 
 
 context.load_cert_chain(
@@ -97,8 +98,8 @@ def task_status(task_id):
             'status': f'Task {task_id} completed',
             'result': result
         })
-
-        parse_and_save_result(result)
+        db = Database()
+        db.parse_and_save_result(result)
         
     elif task.state == 'FAILURE':
         response.update({
@@ -144,9 +145,8 @@ def get_events():
         events = []
         if db_path.exists():
             db = Database()
-            session = db.SessionLocal()
-            events = session.query(Event).options(joinedload(Event.host)).all()
-            session.close()
+            events = db.session.query(Event).options(joinedload(Event.host)).all()
+            db.session.close()
         return jsonify(
             {"status": "SUCCESS", 
              "events": [{
