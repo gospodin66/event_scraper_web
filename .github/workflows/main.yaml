@@ -1,4 +1,4 @@
-name: Nginx Reverse Proxy / webserver CI/CD
+name: Event Scraper CLI CI/CD
 
 on:
   workflow_dispatch:
@@ -6,18 +6,46 @@ on:
     branches:
       - experiments
 
+env:
+  PROJECT_PATH: event_scraper_web
+  DOCKER_IMAGE: python:3.12-slim
+
 jobs:
-  # Build Job
-  build:
-    runs-on: 127.0.0.1:5000/nginx:1.0
+  checkout:
+    runs-on: fedora-latest
     steps:
-      - name: Build Docker Image
-        run: |
-          docker build -t 127.0.0.1:5000/nginx:1.0 .
-      - name: Push Docker Image
-        run: |
-          docker push 127.0.0.1:5000/nginx:1.0
-      - name: healthcheck
-        run: |
-          curl -k https://reverse-proxy.default.svc.cluster.local/healthcheck
-          curl -k https://webserver.default.svc.cluster.local/healthcheck
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Save repository path
+        run: echo "REPO_PATH=$(pwd)" >> $GITHUB_ENV
+
+  create_venv:
+    runs-on: fedora-latest
+    needs: checkout
+    container:
+      image: ${{ env.DOCKER_IMAGE }}
+    steps:
+      - name: Create Virtual Environment
+        run: python -m venv ${{ env.PROJECT_PATH }}/venv
+
+      - name: Save venv path
+        run: echo "VENV_PATH=${{ env.PROJECT_PATH }}/venv" >> $GITHUB_ENV
+
+  install_dependencies:
+    runs-on: fedora-latest
+    needs: create_venv
+    container:
+      image: ${{ env.DOCKER_IMAGE }}
+    steps:
+      - name: Install Dependencies
+        run: ${{ env.VENV_PATH }}/bin/pip install -r ${{ env.PROJECT_PATH }}/requirements.txt
+
+  run_scraper:
+    runs-on: fedora-latest
+    needs: install_dependencies
+    container:
+      image: ${{ env.DOCKER_IMAGE }}
+    steps:
+      - name: Run Event Scraper
+        run: ${{ env.VENV_PATH }}/bin/python ${{ env.PROJECT_PATH }}/event_scraper/src/init.py
