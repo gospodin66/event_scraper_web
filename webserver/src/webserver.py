@@ -1,18 +1,18 @@
 from flask import Flask, render_template, jsonify, request
-import logging
+from logging import getLogger
 from pathlib import Path
 from queue import Queue
-import sys
-import ssl
+from sys import path
+from ssl import SSLContext, PROTOCOL_TLS_SERVER, CERT_OPTIONAL
 from sqlalchemy.orm import joinedload
 
 project_root = Path(__file__).parent.parent.parent
 celery_path = project_root / 'event_scraper_celery'
-sys.path.extend([str(project_root), str(celery_path)])
+path.extend([str(project_root), str(celery_path)])
 from event_scraper_celery.tasks import run_scraper_task
 from db import Database, Event
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 def verify_dir(path: Path, dir_type: str) -> str:
     if not path.exists():
@@ -37,8 +37,8 @@ app = Flask(
 )
 
 
-context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.verify_mode = ssl.CERT_OPTIONAL
+context = SSLContext(PROTOCOL_TLS_SERVER)
+context.verify_mode = CERT_OPTIONAL
 context.load_cert_chain(certfile=f"{cert_dir}/server.crt", keyfile=f"{cert_dir}/server.key")
 context.load_verify_locations(cafile="/etc/ssl/certs/ca-certificates.crt")
 
