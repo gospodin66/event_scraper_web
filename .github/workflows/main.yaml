@@ -9,8 +9,6 @@ on:
 jobs:
   checkout:
     runs-on: self-hosted
-    env:
-      PROJECT_PATH: event_scraper_web
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -23,36 +21,30 @@ jobs:
     needs: checkout
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/${{ env.PROJECT_PATH }}
-    env:
-      PROJECT_PATH: event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
     steps:
       - name: Create Virtual Environment
-        run: python -m venv /home/runner/${{ env.PROJECT_PATH }}/venv
+        run: python -m venv /home/runner/event_scraper_web/venv
 
       - name: Save venv path
-        run: echo "VENV_PATH=/home/runner/${{ env.PROJECT_PATH }}/venv" >> $GITHUB_ENV
+        run: echo "VENV_PATH=/home/runner/event_scraper_web/venv" >> $GITHUB_ENV
 
   install_dependencies:
     runs-on: self-hosted
     needs: create_venv
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/${{ env.PROJECT_PATH }}
-    env:
-      PROJECT_PATH: event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
     steps:
       - name: Install Dependencies
-        run: /home/runner/${{ env.VENV_PATH }}/bin/pip install -r /home/runner/${{ env.PROJECT_PATH }}/requirements.txt
+        run: /home/runner/event_scraper_web/venv/bin/pip install -r /home/runner/event_scraper_web/requirements.txt
 
   run_scraper:
     runs-on: self-hosted
     needs: install_dependencies
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/${{ env.PROJECT_PATH }}
-    env:
-      PROJECT_PATH: event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
     steps:
       - name: Run Event Scraper
-        run: /home/runner/${{ env.VENV_PATH }}/bin/python /home/runner/${{ env.PROJECT_PATH }}/event_scraper/src/init.py
+        run: /home/runner/event_scraper_web/venv/bin/python /home/runner/event_scraper_web/event_scraper/src/init.py
