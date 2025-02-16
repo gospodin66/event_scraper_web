@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - experiments
+      - master
 
 env:
   PROJECT_PATH: event_scraper_web
@@ -12,7 +12,7 @@ env:
 
 jobs:
   checkout:
-    runs-on: fedora-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -21,31 +21,34 @@ jobs:
         run: echo "REPO_PATH=$(pwd)" >> $GITHUB_ENV
 
   create_venv:
-    runs-on: fedora-latest
+    runs-on: self-hosted
     needs: checkout
     container:
       image: ${{ env.DOCKER_IMAGE }}
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/${{ env.PROJECT_PATH }}
     steps:
       - name: Create Virtual Environment
-        run: python -m venv ${{ env.PROJECT_PATH }}/venv
+        run: python -m venv /home/runner/${{ env.PROJECT_PATH }}/venv
 
       - name: Save venv path
-        run: echo "VENV_PATH=${{ env.PROJECT_PATH }}/venv" >> $GITHUB_ENV
+        run: echo "VENV_PATH=/home/runner/${{ env.PROJECT_PATH }}/venv" >> $GITHUB_ENV
 
   install_dependencies:
-    runs-on: fedora-latest
+    runs-on: self-hosted
     needs: create_venv
     container:
       image: ${{ env.DOCKER_IMAGE }}
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/${{ env.PROJECT_PATH }}
     steps:
       - name: Install Dependencies
-        run: ${{ env.VENV_PATH }}/bin/pip install -r ${{ env.PROJECT_PATH }}/requirements.txt
+        run: /home/runner/${{ env.VENV_PATH }}/bin/pip install -r /home/runner/${{ env.PROJECT_PATH }}/requirements.txt
 
   run_scraper:
-    runs-on: fedora-latest
+    runs-on: self-hosted
     needs: install_dependencies
     container:
       image: ${{ env.DOCKER_IMAGE }}
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/${{ env.PROJECT_PATH }}
     steps:
       - name: Run Event Scraper
-        run: ${{ env.VENV_PATH }}/bin/python ${{ env.PROJECT_PATH }}/event_scraper/src/init.py
+        run: /home/runner/${{ env.VENV_PATH }}/bin/python /home/runner/${{ env.PROJECT_PATH }}/event_scraper/src/init.py

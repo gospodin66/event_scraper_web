@@ -11,3 +11,4 @@ __pycache__/
 webserver/cert/
 notes.txt
 webserver/src/events.sqlite
+.runner-token.txt
