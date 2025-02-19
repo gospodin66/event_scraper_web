@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+env:
+  PROJECT_PATH: /home/runner/event_scraper_web
+
 jobs:
   checkout:
     runs-on: self-hosted
@@ -20,29 +23,29 @@ jobs:
     needs: checkout
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=${{ env.PROJECT_PATH }}
     steps:
       - name: Create Virtual Environment
-        run: python -m venv /home/runner/event_scraper_web/venv
+        run: python -m venv ${{ env.PROJECT_PATH }}
       - name: Save venv path
-        run: echo "VENV_PATH=/home/runner/event_scraper_web/venv" >> $GITHUB_ENV
+        run: echo "VENV_PATH=${{ env.PROJECT_PATH }}" >> $GITHUB_ENV
 
   install_dependencies:
     runs-on: self-hosted
     needs: create_venv
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=${{ env.PROJECT_PATH }}
     steps:
       - name: Install Dependencies
-        run: /home/runner/event_scraper_web/venv/bin/pip install -r /home/runner/event_scraper_web/requirements.txt
+        run: ${{ env.PROJECT_PATH }}/bin/pip install -r ${{ env.PROJECT_PATH }}/requirements.txt
 
   run_scraper:
     runs-on: self-hosted
     needs: install_dependencies
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=${{ env.PROJECT_PATH }}
     steps:
       - name: Run Event Scraper
-        run: /home/runner/event_scraper_web/venv/bin/python /home/runner/event_scraper_web/event_scraper/src/init.py
+        run: ${{ env.PROJECT_PATH }}/bin/python ${{ env.PROJECT_PATH }}/event_scraper/src/init.py
