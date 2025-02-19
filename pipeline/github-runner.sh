@@ -2,12 +2,12 @@
 
 set -ex;
 
-hash="b13b784808359f31bc79b08a191f5f83757852957dd8fe3dbfcc38202ccf5768"
-
 if [ -z "$REPO_URL" ]; then
     echo "Error: REPO_URL environment variable is not set."
     exit 1
 fi
+
+hash="b13b784808359f31bc79b08a191f5f83757852957dd8fe3dbfcc38202ccf5768"
 
 mkdir actions-runner; cd actions-runner
 curl -o actions-runner-linux-x64-2.322.0.tar.gz \
