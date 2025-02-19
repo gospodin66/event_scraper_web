@@ -15,9 +15,6 @@ RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && dpkg-reconfigure --fron
 
 RUN useradd -m runner && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Add runner user to docker group
-RUN groupadd docker && usermod -aG docker runner
-
 WORKDIR /home/runner
 
 COPY github-runner.sh .
