@@ -1,6 +1,7 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ARG DOCKER_GID
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -11,10 +12,10 @@ RUN apt-get update && apt-get install -y \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
+RUN ln -fs /usr/share/zoneinfo/Etc/GMT+1 /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
 
 RUN useradd -m runner && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-RUN groupadd docker && usermod -aG docker runner
+RUN groupadd -g ${DOCKER_GID} docker && usermod -aG docker runner
 
 WORKDIR /home/runner
 
