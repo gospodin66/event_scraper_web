@@ -20,7 +20,7 @@ jobs:
     needs: checkout
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web --mount type=bind,source=/home/runner,target=/home/runner
     steps:
       - name: Install venv if not exists
         run: apt-get update && apt-get install -y python3-venv
@@ -34,7 +34,7 @@ jobs:
     needs: create_venv
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web --mount type=bind,source=/home/runner,target=/home/runner
     steps:
       - name: Install Dependencies
         run: /home/runner/event_scraper_web/bin/pip install -r /home/runner/event_scraper_web/requirements.txt
@@ -44,7 +44,7 @@ jobs:
     needs: install_dependencies
     container:
       image: python:3.12-slim
-      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
+      options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web --mount type=bind,source=/home/runner,target=/home/runner
     steps:
       - name: Run Event Scraper
         run: /home/runner/event_scraper_web/bin/python /home/runner/event_scraper_web/event_scraper/src/init.py
