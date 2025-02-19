@@ -22,8 +22,10 @@ jobs:
       image: python:3.12-slim
       options: --mount type=bind,source=${{ github.workspace }},target=/home/runner/event_scraper_web
     steps:
+      - name: Install venv if not exists
+        run: apt-get update && apt-get install -y python3-venv
       - name: Create Virtual Environment
-        run: python -m venv /home/runner/event_scraper_web
+        run: python3 -m venv /home/runner/event_scraper_web
       - name: Save venv path
         run: echo "VENV_PATH=/home/runner/event_scraper_web" >> $GITHUB_ENV
 
