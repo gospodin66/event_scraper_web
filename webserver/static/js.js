@@ -22,20 +22,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.querySelector('#output-table tbody');
         tbody.innerHTML = ''; // Clear existing content
         events.forEach(event => {
+
+
+            console.log(event);
+
+
             const eventRow = document.createElement('tr');
             eventRow.className = 'event-row';
+            // Host cell
+            const venueHostCell = document.createElement('td');
+            venueHostCell.textContent = event.venue;
+            eventRow.appendChild(venueHostCell);
             // Venue cell
-            const venueCell = document.createElement('td');
-            venueCell.textContent = event.venue;
-            eventRow.appendChild(venueCell);
-            // Event name cell
-            const nameCell = document.createElement('td');
-            nameCell.textContent = event.name;
-            eventRow.appendChild(nameCell);
+            const venueNameCell = document.createElement('td');
+            venueNameCell.textContent = event.name;
+            eventRow.appendChild(venueNameCell);
             // When cell
-            const whenCell = document.createElement('td');
-            whenCell.textContent = new Date(event.when).toLocaleString();
-            eventRow.appendChild(whenCell);
+            const dateCell = document.createElement('td');
+            dateCell.textContent = event.when;
+            eventRow.appendChild(dateCell);
             // Link cell
             const linkCell = document.createElement('td');
             const link = document.createElement('a');
@@ -47,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
             tbody.appendChild(eventRow);
         });
     }
-
 
     function updateStatus(text) {
         statusElement.innerHTML = `${text}`;
@@ -114,7 +118,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-
     async function fetchAndDisplayHosts() {
         try {
             const response = await fetch('/get-hosts'); 
@@ -157,7 +160,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-
     btnShowHosts.addEventListener('mouseleave', () => {
         hostsTooltip.style.display = 'none'; 
     });
@@ -190,8 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-
-    /** Disply events from db if exists */
+    /** Display events from db if exists */
     fetch('/get-events')
         .then(response => response.json())
         .then(data => {

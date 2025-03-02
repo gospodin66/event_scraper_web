@@ -1,9 +1,9 @@
 webserver/notes.txt
-webserver/html/*
 k3s_data/
 bin/
 lib/
 lib64
+include/
 pyvenv.cfg
 __pycache__/
 *.pyc

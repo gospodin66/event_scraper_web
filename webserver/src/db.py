@@ -1,11 +1,10 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
-import sqlite3
+from sqlite3 import connect as sqlite_connect
 from pathlib import Path
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
-import re
-import os
+from os import path, mkdir, chmod
+import stat
 from contextlib import contextmanager
 
 Base = declarative_base()
@@ -22,12 +21,12 @@ class Event(Base):
     host_id = Column(Integer, ForeignKey('hosts.id'))
     event = Column(String, unique=True, nullable=False)
     link = Column(String, unique=True, nullable=False)
-    when = Column(DateTime, nullable=False)
+    when = Column(String, nullable=False)
     host = relationship('Host', back_populates='events')
 
 class Database():
     DB = 'events.sqlite'
-    DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'events.db', DB)
+    DB_PATH = path.join(path.dirname(__file__), '..', 'events.db', DB)
     DATABASE_URL = f'sqlite:///{DB}'
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -35,7 +34,8 @@ class Database():
     def __init__(self):
         if not Path(self.DB).exists():
             self.create_database()
-        self.conn = sqlite3.connect(self.DB)
+            
+        self.conn = sqlite_connect(self.DB)
         self.cursor = self.conn.cursor()
         self.session = self.SessionLocal()
 
@@ -49,6 +49,7 @@ class Database():
 
     def create_database(self):
         Base.metadata.create_all(bind=self.engine)
+        chmod(self.DB, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 
 
     def create_table(self, model):
@@ -84,14 +85,17 @@ class Database():
 
     def init_db(self) -> None:
         print("Initializing database")
+        
         if not Path(self.DB_PATH).exists():
-            print(f"Creating database directory: {os.path.dirname(self.DB_PATH)}")
-            os.mkdir(os.path.dirname(self.DB_PATH))
+            print(f"Creating database directory: {path.dirname(self.DB_PATH)}")
+            mkdir(path.dirname(self.DB_PATH))
+
         print("Creating database and tables")
         self.create_database()
         self.create_table(Event)
         self.create_table(Host)
         self.close()
+
         print("Database initialized.")
 
 
@@ -106,8 +110,7 @@ class Database():
             venue_name = event.get('venue')
             event_name = event.get('name')
             link = event.get('link')
-            when_str = event.get('when')
-            when = datetime.fromisoformat(when_str)
+            when = event.get('when')
 
             print(f"Inserting record: Venue: {venue_name}, Event: {event_name}, Link: {link}, When: {when}")
 
