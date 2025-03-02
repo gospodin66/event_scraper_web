@@ -22,11 +22,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.querySelector('#output-table tbody');
         tbody.innerHTML = ''; // Clear existing content
         events.forEach(event => {
-
-
-            console.log(event);
-
-
             const eventRow = document.createElement('tr');
             eventRow.className = 'event-row';
             // Host cell
@@ -49,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
             link.target = '_blank';
             linkCell.appendChild(link);
             eventRow.appendChild(linkCell);
+            // Add row to table
             tbody.appendChild(eventRow);
         });
     }
