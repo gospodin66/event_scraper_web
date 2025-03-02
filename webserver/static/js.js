@@ -8,9 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusElement = document.getElementById('status');
 
     const btnShowHosts = document.getElementById('btn-show-hosts');
-    const hostsContent = document.getElementById('hosts-content');
     const btnUpdateHosts = document.getElementById('btn-update-hosts');
-    const hostsTooltip = document.getElementById('hosts-tooltip');
+    const hostsTooltip = document.getElementById('tooltip');
+    let fromButtonClick = false;
 
     function isErrorMessage(message) {
         return ERROR_KEYWORDS.some(keyword => 
@@ -120,22 +120,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const hosts = await response.json(); 
                 const hostsArray = hosts.hosts || [];
-                hostsContent.innerHTML = hostsArray.map(host => `<div>${host}</div>`).join('');
-                hostsTooltip.style.display = 'block'; 
+                hostsTooltip.innerHTML = hostsArray.map(host => `<div>${host}</div>`).join('');
+                hostsTooltip.style.display = 'block';
             } else {
-                hostsContent.textContent = 'Error loading hosts';
+                hostsTooltip.textContent = 'Error loading hosts';
                 hostsTooltip.style.display = 'block';
             }
         } catch (error) {
-            hostsContent.textContent = 'Error: ' + error.message;
+            hostsTooltip.textContent = 'Error: ' + error.message;
             hostsTooltip.style.display = 'block'; 
         }
     }
 
-    btnShowHosts.addEventListener('click', fetchAndDisplayHosts);
-    btnUpdateHosts.addEventListener('click', fetchAndDisplayHosts);
-    hostsContent.addEventListener('blur', async () => {
-        const hostsArray = hostsContent.innerText.split('\n').filter(line => line.trim() !== '');
+    async function updateHosts() {
+        const hostsArray = Array.from(hostsTooltip.querySelectorAll('div')).map(div => div.textContent.trim()).filter(line => line !== '');
+
         if (hostsArray.length > 0) {
             try {
                 const response = await fetch('/update-hosts', {
@@ -154,15 +153,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error);
             }
         }
+    }
+
+    btnShowHosts.addEventListener('click', (e) => {
+        fromButtonClick = true;
+        hostsTooltip.setAttribute('contenteditable', 'false');
+        hostsTooltip.style.left = e.pageX + 'px';
+        hostsTooltip.style.top = (e.pageY + 20) + 'px';
+        fetchAndDisplayHosts();
+    });
+    btnUpdateHosts.addEventListener('click', (e) => {
+        fromButtonClick = false;
+        hostsTooltip.setAttribute('contenteditable', 'true');
+        hostsTooltip.style.left = e.pageX + 'px';
+        hostsTooltip.style.top = (e.pageY + 20) + 'px';
+        fetchAndDisplayHosts();
+    });
+
+    hostsTooltip.addEventListener('mouseleave', () => {
+        hostsTooltip.style.display = 'none'; 
+        if (!fromButtonClick) {
+            updateHosts();
+        }
+        fromButtonClick = false;
     });
 
     btnShowHosts.addEventListener('mouseleave', () => {
         hostsTooltip.style.display = 'none'; 
     });
     btnShowHosts.addEventListener('mousemove', (e) => {
+        if (hostsTooltip.style.display !== 'none') {
+            return;
+        }
         hostsTooltip.style.left = e.pageX + 'px';
         hostsTooltip.style.top = (e.pageY + 20) + 'px';
     });
+
     btnRun.addEventListener('click', async function() {
         try {
             document.getElementById('error').textContent = '';
