@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scraper
+  namespace: eventscraper
+  labels:
+    app: scraper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scraper
+  template:
+    metadata:
+      labels:
+        app: scraper
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: scraper
+        image: localhost:5000/event_scraper:2.9
+        ports:
+        - containerPort: 22
+        command: 
+          - /usr/sbin/sshd
+          - -D
+        volumeMounts:
+          - name: scraper-meta-tmp
+            mountPath: /app/.auth
+          - name: secret-scraper-meta
+            mountPath: /app/.auth/.hosts.txt
+            subPath: .hosts.txt
+          - name: secret-scraper-meta
+            mountPath: /app/.auth/.smtp.txt
+            subPath: .smtp.txt
+          - name: secret-scraper-meta
+            mountPath: /app/.auth/.recipients.txt
+            subPath: .recipients.txt
+      volumes:
+      - name: secret-scraper-meta
+        secret:
+          secretName: scraper-meta
+      - name: scraper-meta-tmp
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scraper
+  namespace: eventscraper
+spec:
+  selector:
+    app: scraper
+  ports:
+    - protocol: TCP
+      port: 30022
+      targetPort: 22
+  type: ClusterIP 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scraper-meta
+  namespace: eventscraper
+type: Opaque
+data:
+  .hosts.txt: YWtjLmF0dGFjawppbmZhbW91c1RES00KUmVjaUtsYW9uaWNhCmJvb2dhbG9vemdiCmR2YW9zYW1rbHViClBldGlLdXBlClN0YXJhU2tvbGFOTQo=
+  .smtp.txt: c210cC5nbWFpbC5jb206NTg3CmJvcm5hOTg2QGdtYWlsLmNvbTphdWJ1a2t5anN6Z214bGxxCg==
+  .recipients.txt: Ym9ybmE5ODZAZ21haWwuY29tCg==

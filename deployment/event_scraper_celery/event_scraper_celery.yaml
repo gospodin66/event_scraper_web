@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+  namespace: eventscraper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery
+  template:
+    metadata:
+      labels:
+        app: celery
+    spec:
+      containers:
+        - name: celery
+          image: localhost:5000/event_scraper_celery:2.9
+          env:
+          - name: RABBITMQ_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: rabbitmq-cm
+                key: RABBITMQ_HOST
+          - name: RABBITMQ_USER
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-secret
+                key: RABBITMQ_USER
+          - name: RABBITMQ_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-secret
+                key: RABBITMQ_PASSWORD
+          ports:
+            - containerPort: 8080
+          command:
+            - "celery"
+            - "-A"
+            - "tasks"
+            - "worker"
+            - "--prefetch-multiplier=1"
+            - "--max-tasks-per-child=100"
+            - "--concurrency=2"
+            - "--loglevel=info"
+            - "-Q"
+            - "scraper_tasks"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: celery
+  namespace: eventscraper
+spec:
+  selector:
+    app: celery
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8000

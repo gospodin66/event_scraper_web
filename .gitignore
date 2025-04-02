@@ -12,3 +12,4 @@ webserver/cert/
 notes.txt
 webserver/src/events.sqlite
 .runner-token.txt
+debugging.txt

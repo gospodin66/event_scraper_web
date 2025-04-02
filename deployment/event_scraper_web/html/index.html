@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Scraper</title>
+    <link rel="stylesheet" href="/static/css.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Event Scraper</h2>
+        <div class="button-container">
+            <button id="btn-fetch-events" class="action-button">
+                <span class="button-text">Run Scraper</span>
+                <span class="spinner-border d-none"></span>
+            </button>
+            <button id="btn-show-hosts" class="action-button">Show Hosts</button>
+            <button id="btn-update-hosts" class="action-button">Update Hosts</button>
+        </div>
+        <div id="status" class="hidden"></div>
+        <div id="error" class="hidden"></div>
+        <div id="output">
+            <table id="output-table">
+                <thead>
+                    <tr>
+                        <th>Venue</th>
+                        <th>Event Name</th>
+                        <th>When</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Event rows will be dynamically inserted here -->
+                </tbody>
+            </table>
+        </div>
+        <div id="tooltip"></div>
+    </div>
+    <script src="/static/js.js"></script>
+</body>
+</html>
