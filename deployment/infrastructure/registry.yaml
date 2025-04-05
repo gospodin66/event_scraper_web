@@ -1,0 +1,29 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+    environment: production
+http:
+  addr: :5000
+  secret: dGxIRWhjWHNERTI5ZDE2OA==
+  headers:
+    X-Content-Type-Options: 
+      - "nosniff"
+  # Explicitly disable HTTPS
+  debug:
+    addr: localhost:5001
+  http2:
+    disabled: true
+storage:
+  delete:
+    enabled: true  
+  filesystem:
+    rootdirectory: /var/lib/registry
+  cache:
+    layerinfo: filesystem  
+    size: 100m
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3

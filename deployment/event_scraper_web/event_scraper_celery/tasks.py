@@ -1,5 +1,8 @@
 from celery import Celery
 from paramiko import SSHClient, AutoAddPolicy
+from kafka import KafkaProducer
+import json
+import os
 
 app = Celery('tasks')
 app.config_from_object('celeryconfig')
@@ -10,9 +13,24 @@ USERNAME = "scraper"
 PASSWORD = "scraper123" # same password set in scraper Dockerfile 
 PORT = 30022
 
+def on_send_success(record_metadata):
+    print(f"Message sent to Kafka topic {record_metadata.topic}, partition {record_metadata.partition}, offset {record_metadata.offset}")
+
+def on_send_error(excp):
+    print(f"Error sending message: {excp}")
+
+
 @app.task(bind=True)
 def run_scraper_task(self):
     try:
+        producer = KafkaProducer(
+            bootstrap_servers=os.getenv("BOOTSTRAP_SERVERS", "kafka.eventscraper.svc.cluster.local:9092"),
+            value_serializer=lambda m: json.dumps(m).encode('utf-8'),
+            request_timeout_ms=60000,
+            retries=5,
+            api_version_auto_timeout_ms=10000 
+        )
+        
         ssh = SSHClient()
         ssh.set_missing_host_key_policy(AutoAddPolicy())
         ssh.connect(REMOTE_HOST, username=USERNAME, password=PASSWORD, port=PORT)
@@ -45,7 +63,14 @@ def run_scraper_task(self):
                         "venue": venue_name,
                         'name': e[0]
                     })
-            
+
+        producer.send('scraped_data', {
+            "task_id": run_scraper_task.request.id,
+            "result": events
+        }).add_callback(on_send_success).add_errback(on_send_error)
+        
+        producer.flush() 
+
         return {
             'status': 'SUCCESS',
             'events': events,

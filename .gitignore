@@ -13,3 +13,4 @@ notes.txt
 webserver/src/events.sqlite
 .runner-token.txt
 debugging.txt
+deployment/event_scraper_kafka/kafka-data/

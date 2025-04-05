@@ -111,6 +111,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             showStatus('Error checking task status: ' + error);
+            resetBtn();
+        } finally {
+            spinner.classList.add('d-none');
+            buttonText.textContent = 'Run Scraper';
+            btnRun.disabled = false;
         }
     }
 
@@ -204,7 +209,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (response.ok) {
-                startTaskPolling(data.task_id);
+                //startTaskPolling(data.task_id);
+                showStatus("");
+                updateStatus("");
+
+
+                
             } else {
                 showStatus('Failed to start scraper: ' + data.error);
             }
@@ -227,6 +237,59 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             document.getElementById('error').innerText = 'Error fetching events: ' + error;
         });
+
+
+    const socket = io("https://127.0.0.1:35443", {
+        transports: ['websocket'],
+        secure: true,
+        rejectUnauthorized: false
+    });
+    
+    console.log("Connecting to socket...");
+
+    try {
+        socket.on('connect', function() {
+            console.log("Connected to socket");
+        });
+    } catch (error) {
+        console.error("Socket connection error:", error);
+        console.log("Attempting to connect to socket with fallback...");
+        const socket = io("http://127.0.0.1:35443", {
+            transports: ['websocket'],
+            secure: false,
+            rejectUnauthorized: false
+        });
+        socket.on('connect', function() {
+            console.log("Connected to socket with fallback");
+        });
+        socket.on('connect_error', function(err) {
+            console.error("Socket connection error with fallback:", err);
+        });
+    }
+
+    socket.on('disconnect', function() {
+        console.log("Disconnected from socket");
+    });
+    socket.on('connect_error', function(err) {
+        console.error("Socket connection error:", err);
+    });
+    socket.on('connect_timeout', function(err) {
+        console.error("Socket connection timeout:", err);
+    });
+    socket.on('error', function(err) {
+        console.error("Socket error:", err);
+    });
+    socket.on('kafka_message', function(data) {
+
+        console.log('Received Kafka Message:', data);
+        //var messagesDiv = document.getElementById('messages');
+        //messagesDiv.innerHTML += `<p>${JSON.stringify(data)}</p>`;
+
+        updateTable(data.result);
+
+        showStatus('Task completed');
+        resetBtn();
+    });
 
 });
 })();

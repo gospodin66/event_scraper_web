@@ -1,0 +1,27 @@
+Suppose your Selenium script is just one step in a larger workflow:
+(e.g., scrape → process → store → notify). Kafka is ideal for this:
+  Step 1 (Selenium) publishes to Kafka topic: scraped_data
+  Step 2 (data processor) reads from scraped_data, processes, and writes to processed_data
+  Step 3 (notifier) reads from processed_data, sends email/SMS/etc.
+
+
+🧍User clicks "Run Task" on Flask page.
+🧩 Flask sends task to Celery (via RabbitMQ).
+🛠 Celery completes the task.
+📢 Celery publishes result to Kafka topic task_results.
+🧑‍💻 Flask (or frontend) has a Kafka consumer listening to task_results:
+If task ID matches → update page via WebSocket or Server-Sent Events (SSE).
+🚫 No polling.
+
+
+
+
+
+---
+
+# Check topics:
+
+kafka-topics.sh --list --bootstrap-server kafka:9092 && \
+kafka-topics.sh --describe --bootstrap-server kafka:9092 --topic scraped_data && \
+kafka-topics.sh --describe --bootstrap-server kafka:9092 --topic processed_data && \
+kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic scraped_data --from-beginning

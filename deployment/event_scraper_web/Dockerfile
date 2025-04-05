@@ -5,7 +5,7 @@ ARG FLASK_USER=webapp
 RUN useradd --no-create-home --shell /bin/bash -u 1000 $FLASK_USER
 RUN mkdir -p /app/html /app/static
 
-RUN pip install --upgrade pip && pip install --no-cache-dir flask gunicorn celery paramiko sqlalchemy psycopg2-binary 
+RUN pip install --upgrade pip && pip install --no-cache-dir flask gunicorn celery paramiko sqlalchemy psycopg2-binary  kafka-python flask_socketio gevent>=1.4
 
 WORKDIR /app
 

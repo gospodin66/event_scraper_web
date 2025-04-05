@@ -1,0 +1,148 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kafka-auth
+  namespace: eventscraper
+type: Opaque
+data:
+  username: a2Fma2F1c2VyCg== # kafkauser
+  password: QnVZbHlPZmhJTWtEMUZ4bg== # BuYlyOfhIMkD1Fxn
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+  namespace: eventscraper
+data:
+  BOOTSTRAP_SERVERS: kafka:9092
+  TOPIC_SCRAPED: scraped_data
+  TOPIC_PROCESSED: processed_data
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-kafka-topics
+  namespace: eventscraper
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: create-topics-wait
+          image: busybox:1.35.0-uclibc
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until nc -zv kafka 9092; do
+                echo "Waiting for Kafka to be available..."
+                sleep 10
+              done
+              echo "Kafka is available, proceeding with topic creation"
+      containers:
+        - name: create-topics
+          image: localhost:5000/event_scraper_kafka:4.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              kafka-topics.sh --create --topic scraped_data   --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+              kafka-topics.sh --create --topic processed_data --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+      restartPolicy: OnFailure
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: eventscraper
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: localhost:5000/event_scraper_kafka:4.1
+          env:
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "1@kafka.eventscraper.svc.cluster.local:9093"
+            - name: KAFKA_NODE_ID
+              value: "1"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://kafka.eventscraper.svc.cluster.local:9092"
+            - name: KAFKA_LOG_DIRS
+              value: "/var/lib/kafka/data"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "1"
+            - name: ALLOW_PLAINTEXT_LISTENER
+              value: "yes"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+
+          ports:
+            - containerPort: 9092 
+            - containerPort: 9093 
+          volumeMounts:
+            - name: kafka-storage
+              mountPath: /var/lib/kafka/data
+      volumes:
+        - name: kafka-storage
+          persistentVolumeClaim:
+            claimName: kafka-pvc
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kafka-pv
+  namespace: eventscraper
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /home/cheki/workspace/event_scraper_web/deployment/event_scraper_kafka/kafka-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kafka-pvc
+  namespace: eventscraper
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: eventscraper
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9092
+      targetPort: 9092
+      name: controller
+    - port: 9093
+      targetPort: 9093
+      name: kafka
+      
+  selector:
+    app: kafka

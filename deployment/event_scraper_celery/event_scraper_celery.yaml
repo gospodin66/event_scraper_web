@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: celery
-          image: localhost:5000/event_scraper_celery:2.9
+          image: localhost:5000/event_scraper_celery:4.1
           env:
           - name: RABBITMQ_HOST
             valueFrom:

@@ -1,3 +1,4 @@
+import threading
 from flask import Flask, render_template, jsonify, request
 from logging import getLogger
 from pathlib import Path
@@ -5,6 +6,10 @@ from queue import Queue
 from sys import path
 from ssl import SSLContext, PROTOCOL_TLS_SERVER, CERT_OPTIONAL
 from sqlalchemy.orm import joinedload
+from flask_socketio import SocketIO, emit
+from kafka import KafkaConsumer
+import os
+import json
 
 celery_path = '/app'
 path.extend([str('/app/'), str(celery_path)])
@@ -14,10 +19,12 @@ from db import Database, Event
 
 logger = getLogger(__name__)
 
+
 def verify_dir(path: Path, dir_type: str) -> str:
     if not path.exists():
         raise FileNotFoundError(f"{dir_type} directory not found: {path}")
     return str(path)
+
 
 
 template_dir = verify_dir(Path('/app/html'), 'Template')
@@ -47,6 +54,33 @@ context.load_cert_chain(
     certfile=f"{cert_dir}/server.crt", 
     keyfile=f"{cert_dir}/server.key"
 )
+
+
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+BOOTSTRAP_SERVERS = os.getenv("BOOTSTRAP_SERVERS", "kafka:9092")
+
+KAFKA_TOPIC = "scraped_data"
+KAFKA_SERVER = "kafka:9092"
+
+consumer = KafkaConsumer(
+    KAFKA_TOPIC,
+    bootstrap_servers=[KAFKA_SERVER],
+    value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+    group_id="flask-group"
+)
+
+def consume_messages():
+    """Run in a separate thread to consume Kafka messages and emit them via WebSocket."""
+    for message in consumer:
+        # Emitting Kafka message to WebSocket clients
+        socketio.emit('kafka_message', message.value)
+
+def start_kafka_consumer():
+    thread = threading.Thread(target=consume_messages)
+    thread.daemon = True
+    thread.start()
+
 
 
 @app.route('/healthz')
@@ -159,6 +193,10 @@ def get_events():
     except Exception as e:
         app.logger.error(f"Failed to fetch events: {str(e)}")
         return jsonify({"status": "ERROR", "error": str(e)}), 500
+
+
+# Run kafka listener in a separate thread
+start_kafka_consumer()
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: webserver
-        image: localhost:5000/event_scraper_web:2.9
+        image: localhost:5000/event_scraper_web:4.1
         env:
         - name: RABBITMQ_USER
           valueFrom:
@@ -43,14 +43,16 @@ spec:
           - "webserver:app"
           - "--bind"
           - "0.0.0.0:443"
+          - "--worker-class"
+          - "gevent"
           - "--workers"
           - "2"
           - "--timeout"
-          - "120"
+          - "30"
           - "--keep-alive"
-          - "5"
+          - "2"
           - "--log-level"
-          - "INFO"
+          - "info"
           - "--access-logfile"
           - "-"
           - "--error-logfile"

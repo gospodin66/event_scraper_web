@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: rabbitmq
-          image: localhost:5000/event_scraper_rabbitmq:2.9
+          image: localhost:5000/event_scraper_rabbitmq:4.1
           ports:
             - containerPort: 5672
               name: amqp

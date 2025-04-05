@@ -19,7 +19,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: scraper
-        image: localhost:5000/event_scraper:2.9
+        image: localhost:5000/event_scraper:4.1
         ports:
         - containerPort: 22
         command: 
