@@ -44,7 +44,6 @@ def run_scraper_task(self):
         if error:
             raise Exception(f"Scraper failed with error: {error}")
         
-        output = output.split('\n\n', 1)[1] if '\n\n' in output else output
         events = []
         venues = [section for section in output.split('\n\n') if ':' in section and 'Script' not in section]
         for venue in venues:           

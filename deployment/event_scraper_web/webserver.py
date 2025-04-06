@@ -10,6 +10,7 @@ from flask_socketio import SocketIO, emit
 from kafka import KafkaConsumer
 import os
 import json
+from time import sleep
 
 celery_path = '/app'
 path.extend([str('/app/'), str(celery_path)])
@@ -72,9 +73,22 @@ consumer = KafkaConsumer(
 
 def consume_messages():
     """Run in a separate thread to consume Kafka messages and emit them via WebSocket."""
-    for message in consumer:
-        # Emitting Kafka message to WebSocket clients
-        socketio.emit('kafka_message', message.value)
+    while True:
+        msg_pack = consumer.poll(timeout_ms=1000)
+        if not msg_pack:
+            sleep(1)
+            continue
+
+        for topic_partition, messages in msg_pack.items():
+            for message in messages:
+                print(f"Received message: {message.value}")
+                # Emitting Kafka message to WebSocket clients
+                socketio.emit('kafka_message', message.value)
+    
+    #for message in consumer:
+    #    print(f"Received message: {message.value}")
+    #    # Emitting Kafka message to WebSocket clients
+    #    socketio.emit('kafka_message', message.value)
 
 def start_kafka_consumer():
     thread = threading.Thread(target=consume_messages)

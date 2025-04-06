@@ -17,9 +17,26 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+      initContainers:
+      - name: init-webserver
+        image: busybox
+        command: [
+          "sh",
+          "-c", 
+          "cp /input/.hosts.txt /output/.hosts.txt && \
+          chown 1000:1000 /output/.hosts.txt && \
+          chmod 600 /output/.hosts.txt"
+        ]
+        volumeMounts:
+        - name: secret-scraper-meta
+          mountPath: /input
+        - name: scraper-meta-tmp
+          mountPath: /output
       containers:
       - name: webserver
         image: localhost:5000/event_scraper_web:4.1
+        ports:
+        - containerPort: 443
         env:
         - name: RABBITMQ_USER
           valueFrom:
@@ -36,8 +53,6 @@ spec:
             configMapKeyRef:
               name: rabbitmq-cm
               key: RABBITMQ_HOST
-        ports:
-        - containerPort: 443
         command:
           - "gunicorn"
           - "webserver:app"
@@ -66,10 +81,18 @@ spec:
           - name: certs-volume
             mountPath: /app/cert
             readOnly: true
+          - name: scraper-meta-tmp
+            mountPath: /app/.auth/.hosts.txt
+            subPath: .hosts.txt
       volumes:
       - name: certs-volume
         secret:
           secretName: webserver-tls
+      - name: secret-scraper-meta
+        secret:
+          secretName: scraper-meta
+      - name: scraper-meta-tmp
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
