@@ -6,11 +6,8 @@ from queue import Queue
 from sys import path
 from ssl import SSLContext, PROTOCOL_TLS_SERVER, CERT_OPTIONAL
 from sqlalchemy.orm import joinedload
-from flask_socketio import SocketIO, emit
-from kafka import KafkaConsumer
+from kafkaclient import KafkaClient
 import os
-import json
-from time import sleep
 
 celery_path = '/app'
 path.extend([str('/app/'), str(celery_path)])
@@ -25,7 +22,6 @@ def verify_dir(path: Path, dir_type: str) -> str:
     if not path.exists():
         raise FileNotFoundError(f"{dir_type} directory not found: {path}")
     return str(path)
-
 
 
 template_dir = verify_dir(Path('/app/html'), 'Template')
@@ -47,54 +43,11 @@ app = Flask(
 
 context = SSLContext(PROTOCOL_TLS_SERVER)
 context.verify_mode = CERT_OPTIONAL
-context.load_cert_chain(certfile=f"{cert_dir}/server.crt", keyfile=f"{cert_dir}/server.key")
 context.load_verify_locations(cafile="/etc/ssl/certs/ca-certificates.crt")
-
-
 context.load_cert_chain(
     certfile=f"{cert_dir}/server.crt", 
     keyfile=f"{cert_dir}/server.key"
 )
-
-
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-BOOTSTRAP_SERVERS = os.getenv("BOOTSTRAP_SERVERS", "kafka:9092")
-
-KAFKA_TOPIC = "scraped_data"
-KAFKA_SERVER = "kafka:9092"
-
-consumer = KafkaConsumer(
-    KAFKA_TOPIC,
-    bootstrap_servers=[KAFKA_SERVER],
-    value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-    group_id="flask-group"
-)
-
-def consume_messages():
-    """Run in a separate thread to consume Kafka messages and emit them via WebSocket."""
-    while True:
-        msg_pack = consumer.poll(timeout_ms=1000)
-        if not msg_pack:
-            sleep(1)
-            continue
-
-        for topic_partition, messages in msg_pack.items():
-            for message in messages:
-                print(f"Received message: {message.value}")
-                # Emitting Kafka message to WebSocket clients
-                socketio.emit('kafka_message', message.value)
-    
-    #for message in consumer:
-    #    print(f"Received message: {message.value}")
-    #    # Emitting Kafka message to WebSocket clients
-    #    socketio.emit('kafka_message', message.value)
-
-def start_kafka_consumer():
-    thread = threading.Thread(target=consume_messages)
-    thread.daemon = True
-    thread.start()
-
 
 
 @app.route('/healthz')
@@ -143,20 +96,21 @@ def task_status(task_id):
     if task.state == 'SUCCESS':
         result = task.get()
         response.update({
-            'status': f'Task {task_id} completed',
+            'status': f'Task {task_id} completed.',
             'result': result
         })
+
         db = Database()
         db.parse_and_save_result(result)
         
     elif task.state == 'FAILURE':
         response.update({
-            'status': f'Task {task_id} failed',
+            'status': f'Task {task_id} failed.',
             'error': str(task.info)
         })
     else:
         response.update({
-            'status': f'Task {task_id} in progress',
+            'status': f'Task {task_id} in progress..',
         })
     
     return jsonify(response)
@@ -209,8 +163,9 @@ def get_events():
         return jsonify({"status": "ERROR", "error": str(e)}), 500
 
 
-# Run kafka listener in a separate thread
-start_kafka_consumer()
+logger.debug("Starting Kafka listener in a separate thread..")
+kafka_client = KafkaClient(app)
+kafka_client.start_kafka_consumer()
 
 
 if __name__ == "__main__":

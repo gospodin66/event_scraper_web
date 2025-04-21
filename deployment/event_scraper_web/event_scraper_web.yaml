@@ -34,7 +34,7 @@ spec:
           mountPath: /output
       containers:
       - name: webserver
-        image: localhost:5000/event_scraper_web:4.1
+        image: localhost:5000/event_scraper_web:4.9.9-1.0.1
         ports:
         - containerPort: 443
         env:

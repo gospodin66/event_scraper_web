@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTable(events) {
         const tbody = document.querySelector('#output-table tbody');
         tbody.innerHTML = ''; // Clear existing content
+
         events.forEach(event => {
             const eventRow = document.createElement('tr');
             eventRow.className = 'event-row';
@@ -282,8 +283,6 @@ document.addEventListener('DOMContentLoaded', function() {
     socket.on('kafka_message', function(data) {
 
         console.log('Received Kafka Message:', data);
-        //var messagesDiv = document.getElementById('messages');
-        //messagesDiv.innerHTML += `<p>${JSON.stringify(data)}</p>`;
 
         updateTable(data.result);
 

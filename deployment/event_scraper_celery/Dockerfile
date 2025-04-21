@@ -9,7 +9,7 @@ RUN useradd --no-create-home --shell /bin/bash $CELERY_USER
 
 WORKDIR /app
 
-RUN pip install --upgrade pip && pip install --no-cache-dir celery paramiko kafka-python
+RUN pip install --upgrade pip && pip install --no-cache-dir celery paramiko kafka-python minio
 
 COPY celeryconfig.py /app/
 COPY tasks.py /app/

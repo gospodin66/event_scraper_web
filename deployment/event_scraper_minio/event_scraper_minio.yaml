@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: eventscraper
+  labels:
+    app: minio
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 9000
+      targetPort: 9000
+      nodePort: 30900
+    - name: console
+      port: 9001
+      targetPort: 9001
+      nodePort: 30901
+  selector:
+    app: minio
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-pv-bucket-scraper-tasks
+  namespace: eventscraper
+spec:
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/cheki/workspace/event_scraper_web/deployment/event_scraper_minio/bucket_scraper_tasks"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc-bucket-scraper-tasks
+  namespace: eventscraper
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: eventscraper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: localhost:5000/event_scraper_minio:4.9.9-1.0.1
+          args:
+            - server
+            - /data
+            - "--console-address"
+            - ":9001"
+          env:
+            - name: MINIO_ROOT_USER
+              value: "minioadmin"
+            - name: MINIO_ROOT_PASSWORD
+              value: "minioadmin"
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          volumeMounts:
+            - name: scraper-tasks-volume
+              mountPath: /data
+      volumes:
+          - name: scraper-tasks-volume
+            persistentVolumeClaim:
+              claimName: minio-pvc-bucket-scraper-tasks
